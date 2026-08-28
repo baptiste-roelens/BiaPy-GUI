@@ -120,6 +120,23 @@ class UIFunction:
                 "#docker_frame { border: 3px solid red; border-radius: 25px;}\n#docker_frame:disabled {border: 3px solid rgb(169,169,169);}"
             )
 
+        # Singularity/Apptainer check
+        import shutil
+        apptainer_path = shutil.which("apptainer")
+        singularity_path = shutil.which("singularity")
+        if apptainer_path:
+            self.main_window.cfg.settings["singularity_found"] = True
+            self.main_window.cfg.settings["singularity_path"] = apptainer_path
+            self.main_window.logger.info(f"Apptainer found at {apptainer_path}")
+        elif singularity_path:
+            self.main_window.cfg.settings["singularity_found"] = True
+            self.main_window.cfg.settings["singularity_path"] = singularity_path
+            self.main_window.logger.info(f"Singularity found at {singularity_path}")
+        else:
+            self.main_window.cfg.settings["singularity_found"] = False
+            self.main_window.cfg.settings["singularity_path"] = ""
+            self.main_window.logger.info("Neither Singularity nor Apptainer was found in the system PATH.")
+
         # GPU check
         self.main_window.cfg.settings["GPUs"] = []
         try:
@@ -428,6 +445,104 @@ class UIFunction:
             for cont_version in range(1, len(supported_versions)):
                 self.main_window.ui.container_input.addItem("{}".format(supported_versions[cont_version]))
 
+        # Rearrange basic settings layout to support Singularity/Apptainer
+        from PySide6.QtWidgets import QComboBox, QLineEdit, QPushButton, QWidget, QHBoxLayout, QFileDialog
+        from PySide6.QtCore import QSize, Qt
+
+        # Remove container version widgets from row 1
+        self.main_window.ui.gridLayout_39.removeWidget(self.main_window.ui.container_version_label)
+        self.main_window.ui.gridLayout_39.removeWidget(self.main_window.ui.container_info)
+        self.main_window.ui.gridLayout_39.removeWidget(self.main_window.ui.container_input)
+
+        # Re-add container version widgets to row 2
+        self.main_window.ui.gridLayout_39.addWidget(self.main_window.ui.container_version_label, 2, 0, 1, 1)
+        self.main_window.ui.gridLayout_39.addWidget(self.main_window.ui.container_info, 2, 1, 1, 1)
+        self.main_window.ui.gridLayout_39.addWidget(self.main_window.ui.container_input, 2, 2, 1, 1)
+
+        # Create container engine widgets and add them to row 1
+        self.main_window.ui.container_engine_label = QLabel("Container engine", self.main_window.ui.tab)
+        self.main_window.ui.container_engine_label.setFont(self.main_window.ui.container_version_label.font())
+
+        self.main_window.ui.container_engine_info = QPushButton(self.main_window.ui.tab)
+        self.main_window.ui.container_engine_info.setObjectName("container_engine_info")
+        self.main_window.ui.container_engine_info.setMinimumSize(QSize(30, 30))
+        self.main_window.ui.container_engine_info.setMaximumSize(QSize(30, 30))
+        self.main_window.ui.container_engine_info.setStyleSheet("QPushButton { border: none; }")
+        self.main_window.ui.container_engine_info.setIcon(self.main_window.cfg.settings["info_image"])
+        self.main_window.ui.container_engine_info.setIconSize(QSize(30, 30))
+        self.main_window.ui.container_engine_info.setToolTip("Select the container engine to run the BiaPy workflow: Docker or Singularity/Apptainer.")
+
+        self.main_window.ui.container_engine_input = QComboBox(self.main_window.ui.tab)
+        self.main_window.ui.container_engine_input.setFont(self.main_window.ui.container_input.font())
+        self.main_window.ui.container_engine_input.setMinimumSize(QSize(0, 30))
+        self.main_window.ui.container_engine_input.setMaximumSize(QSize(16777215, 30))
+        self.main_window.ui.container_engine_input.addItems(["Docker", "Singularity/Apptainer"])
+
+        self.main_window.ui.gridLayout_39.addWidget(self.main_window.ui.container_engine_label, 1, 0, 1, 1)
+        self.main_window.ui.gridLayout_39.addWidget(self.main_window.ui.container_engine_info, 1, 1, 1, 1)
+        self.main_window.ui.gridLayout_39.addWidget(self.main_window.ui.container_engine_input, 1, 2, 1, 1)
+
+        # Create Singularity SIF widgets and add them to row 2
+        self.main_window.ui.singularity_sif_label = QLabel("Singularity image (.sif)", self.main_window.ui.tab)
+        self.main_window.ui.singularity_sif_label.setFont(self.main_window.ui.container_version_label.font())
+        self.main_window.ui.singularity_sif_label.setVisible(False)
+
+        self.main_window.ui.singularity_sif_info = QPushButton(self.main_window.ui.tab)
+        self.main_window.ui.singularity_sif_info.setObjectName("singularity_sif_info")
+        self.main_window.ui.singularity_sif_info.setMinimumSize(QSize(30, 30))
+        self.main_window.ui.singularity_sif_info.setMaximumSize(QSize(30, 30))
+        self.main_window.ui.singularity_sif_info.setStyleSheet("QPushButton { border: none; }")
+        self.main_window.ui.singularity_sif_info.setIcon(self.main_window.cfg.settings["info_image"])
+        self.main_window.ui.singularity_sif_info.setIconSize(QSize(30, 30))
+        self.main_window.ui.singularity_sif_info.setToolTip("Path to the Singularity/Apptainer Image File (.sif or .simg) on your host system.")
+        self.main_window.ui.singularity_sif_info.setVisible(False)
+
+        self.main_window.ui.singularity_sif_layout = QHBoxLayout()
+        self.main_window.ui.singularity_sif_layout.setContentsMargins(0, 0, 0, 0)
+        
+        self.main_window.ui.singularity_sif_input = QLineEdit(self.main_window.ui.tab)
+        self.main_window.ui.singularity_sif_input.setFont(self.main_window.ui.container_input.font())
+        self.main_window.ui.singularity_sif_input.setMinimumSize(QSize(0, 30))
+        self.main_window.ui.singularity_sif_input.setPlaceholderText("Select or enter path to .sif / .simg container file...")
+
+        self.main_window.ui.singularity_sif_browse_bn = QPushButton("Browse", self.main_window.ui.tab)
+        self.main_window.ui.singularity_sif_browse_bn.setFont(self.main_window.ui.container_input.font())
+        self.main_window.ui.singularity_sif_browse_bn.setMinimumSize(QSize(80, 30))
+
+        self.main_window.ui.singularity_sif_layout.addWidget(self.main_window.ui.singularity_sif_input)
+        self.main_window.ui.singularity_sif_layout.addWidget(self.main_window.ui.singularity_sif_browse_bn)
+
+        self.main_window.ui.singularity_sif_container = QWidget(self.main_window.ui.tab)
+        self.main_window.ui.singularity_sif_container.setLayout(self.main_window.ui.singularity_sif_layout)
+        self.main_window.ui.singularity_sif_container.setVisible(False)
+
+        self.main_window.ui.gridLayout_39.addWidget(self.main_window.ui.singularity_sif_label, 2, 0, 1, 1)
+        self.main_window.ui.gridLayout_39.addWidget(self.main_window.ui.singularity_sif_info, 2, 1, 1, 1)
+        self.main_window.ui.gridLayout_39.addWidget(self.main_window.ui.singularity_sif_container, 2, 2, 1, 1)
+
+        # Connect toggling logic
+        def on_engine_changed(index):
+            is_docker = (index == 0)
+            self.main_window.ui.container_version_label.setVisible(is_docker)
+            self.main_window.ui.container_info.setVisible(is_docker)
+            self.main_window.ui.container_input.setVisible(is_docker)
+            
+            self.main_window.ui.singularity_sif_label.setVisible(not is_docker)
+            self.main_window.ui.singularity_sif_info.setVisible(not is_docker)
+            self.main_window.ui.singularity_sif_container.setVisible(not is_docker)
+
+        self.main_window.ui.container_engine_input.currentIndexChanged.connect(on_engine_changed)
+
+        # Connect browse button to file dialog
+        def browse_sif():
+            out = QFileDialog.getOpenFileName(
+                self.main_window, "Select Singularity Image File", "", "Singularity Images (*.sif *.simg);;All Files (*)"
+            )[0]
+            if out != "":
+                self.main_window.ui.singularity_sif_input.setText(os.path.normpath(out))
+
+        self.main_window.ui.singularity_sif_browse_bn.clicked.connect(browse_sif)
+
         self.main_window.ui.SYSTEM__NUM_CPUS__INPUT.addItem("All")
         cpu_count = multiprocessing.cpu_count()
         for i in range(cpu_count):
@@ -488,22 +603,48 @@ class UIFunction:
             if self.main_window.yes_no.answer:
                 self.main_window.ui.job_name_input.setPlainText(new_jobname)
 
-        # Docker installation check
-        if not self.main_window.cfg.settings["docker_found"]:
-            self.main_window.dialog_exec(
-                'Docker installation not found. Please, install it before running BiaPy in its\
-                    <a href="https://docs.docker.com/get-docker/">official documentation</a>. Once you have \
-                    done that please restart this application.',
-                "docker_installation",
-            )
-            return
-        if not self.main_window.cfg.settings["biapy_container_ready"]:
-            self.main_window.dialog_exec(
-                "You need to build BiaPy's container first. You will be redirected yo the main page "
-                "so you can do it.",
-                "docker_installation",
-            )
-            return
+        # Container Engine selection and check
+        container_engine = get_text(self.main_window.ui.container_engine_input)
+        singularity_sif_path = ""
+
+        if container_engine == "Singularity/Apptainer":
+            if not self.main_window.cfg.settings.get("singularity_found", False):
+                self.main_window.dialog_exec(
+                    "Singularity or Apptainer installation not found in the system PATH. "
+                    "Please install Singularity/Apptainer or use Docker.",
+                    "singularity_installation",
+                )
+                return
+            singularity_sif_path = get_text(self.main_window.ui.singularity_sif_input)
+            if singularity_sif_path == "":
+                self.main_window.dialog_exec(
+                    "Singularity image file (.sif) path cannot be empty.",
+                    "singularity_sif_path",
+                )
+                return
+            if not os.path.exists(singularity_sif_path):
+                self.main_window.dialog_exec(
+                    f"The specified Singularity image file does not exist:\n{singularity_sif_path}",
+                    "singularity_sif_path",
+                )
+                return
+        else:
+            # Docker installation check
+            if not self.main_window.cfg.settings["docker_found"]:
+                self.main_window.dialog_exec(
+                    'Docker installation not found. Please, install it before running BiaPy in its\
+                        <a href="https://docs.docker.com/get-docker/">official documentation</a>. Once you have \
+                        done that please restart this application.',
+                    "docker_installation",
+                )
+                return
+            if not self.main_window.cfg.settings["biapy_container_ready"]:
+                self.main_window.dialog_exec(
+                    "You need to build BiaPy's container first. You will be redirected yo the main page "
+                    "so you can do it.",
+                    "docker_installation",
+                )
+                return
 
         # Device selection
         device = get_text(self.main_window.ui.device_input)
@@ -519,64 +660,66 @@ class UIFunction:
             + str(self.main_window.cfg.settings["CUDA_selected"])
         )
 
-        # Check if a pull is necessary
-        local_images = self.main_window.docker_client.images.list()
-        local_biapy_image_tag = ""
+        run_biapy_cond = True
         local_biapy_container_found = False
-        if len(local_images) > 0:
-            # Capture local BiaPy image
-            for i in range(len(local_images)):
-                if len(local_images[i].attrs.get("RepoTags")) > 0:
-                    if (
-                        local_images[i].attrs.get("RepoTags")[0]
-                        == self.main_window.cfg.settings["biapy_container_name"]
-                    ):
-                        # local_biapy_container_found = True # Activate this when locally want to try new BiaPy code
-                        if len(local_images[i].attrs.get("RepoDigests")) > 0:
-                            local_biapy_image_tag = (
-                                local_images[i].attrs.get("RepoDigests")[0].replace("biapyx/biapy@", "")
+
+        if container_engine == "Docker":
+            # Check if a pull is necessary
+            local_images = self.main_window.docker_client.images.list()
+            local_biapy_image_tag = ""
+            if len(local_images) > 0:
+                # Capture local BiaPy image
+                for i in range(len(local_images)):
+                    if len(local_images[i].attrs.get("RepoTags")) > 0:
+                        if (
+                            local_images[i].attrs.get("RepoTags")[0]
+                            == self.main_window.cfg.settings["biapy_container_name"]
+                        ):
+                            # local_biapy_container_found = True # Activate this when locally want to try new BiaPy code
+                            if len(local_images[i].attrs.get("RepoDigests")) > 0:
+                                local_biapy_image_tag = (
+                                    local_images[i].attrs.get("RepoDigests")[0].replace("biapyx/biapy@", "")
+                                )
+
+                res = requests.get("https://registry.hub.docker.com/v2/repositories/biapyx/biapy/tags/")
+                res = res.json()
+                dockerhub_image_tag = ""
+                for i in range(len(res["results"])):
+                    if res["results"][i]["name"] == self.main_window.cfg.settings["biapy_container_name"].split(":")[-1]:
+                        dockerhub_image_tag = res["results"][i]["images"][0]["digest"]
+
+                # Replace BiaPy container
+                if dockerhub_image_tag != "" and local_biapy_image_tag != "":
+                    if dockerhub_image_tag != local_biapy_image_tag:
+                        self.main_window.yes_no_exec(
+                            "There is another BiaPy container ('{}'). Do yo want to remove the current one to "
+                            "save disk space?".format(self.main_window.cfg.settings["biapy_container_name"])
+                        )
+                        assert self.main_window.yes_no
+                        if self.main_window.yes_no.answer:
+                            self.main_window.logger.info("Removing last valid container")
+                            self.main_window.docker_client.images.remove(
+                                self.main_window.cfg.settings["biapy_container_name"], force=True
                             )
 
-            res = requests.get("https://registry.hub.docker.com/v2/repositories/biapyx/biapy/tags/")
-            res = res.json()
-            dockerhub_image_tag = ""
-            for i in range(len(res["results"])):
-                if res["results"][i]["name"] == self.main_window.cfg.settings["biapy_container_name"].split(":")[-1]:
-                    dockerhub_image_tag = res["results"][i]["images"][0]["digest"]
-
-            # Replace BiaPy container
-            if dockerhub_image_tag != "" and local_biapy_image_tag != "":
-                if dockerhub_image_tag != local_biapy_image_tag:
+            # First time
+            if local_biapy_image_tag == "":
+                if not local_biapy_container_found:
                     self.main_window.yes_no_exec(
-                        "There is another BiaPy container ('{}'). Do yo want to remove the current one to "
-                        "save disk space?".format(self.main_window.cfg.settings["biapy_container_name"])
-                    )
-                    assert self.main_window.yes_no
-                    if self.main_window.yes_no.answer:
-                        self.main_window.logger.info("Removing last valid container")
-                        self.main_window.docker_client.images.remove(
-                            self.main_window.cfg.settings["biapy_container_name"], force=True
+                        f"Container version '{container_version_selected}' not found. You will need to download "
+                        + "it (in the future, if you reuse it, downloading won't be required). This will require approximately 12GB ".format(
+                            self.main_window.cfg.settings["biapy_container_size"]
                         )
-
-        # First time
-        run_biapy_cond = True
-        if local_biapy_image_tag == "":
-            if not local_biapy_container_found:
-                self.main_window.yes_no_exec(
-                    f"Container version '{container_version_selected}' not found. You will need to download "
-                    + "it (in the future, if you reuse it, downloading won't be required). This will require approximately 12GB ".format(
-                        self.main_window.cfg.settings["biapy_container_size"]
+                        + "of disk space. Would you like to proceed?"
                     )
-                    + "of disk space. Would you like to proceed?"
-                )
-            else:
-                self.main_window.yes_no_exec(
-                    "Seems that there is an existing BiaPy container locally built ({}). Do you want to continue?".format(
-                        self.main_window.cfg.settings["biapy_container_name"]
+                else:
+                    self.main_window.yes_no_exec(
+                        "Seems that there is an existing BiaPy container locally built ({}). Do you want to continue?".format(
+                            self.main_window.cfg.settings["biapy_container_name"]
+                        )
                     )
-                )
-            assert self.main_window.yes_no
-            run_biapy_cond = self.main_window.yes_no.answer
+                assert self.main_window.yes_no
+                run_biapy_cond = self.main_window.yes_no.answer
 
         if run_biapy_cond:
             # Initialize thread/worker
@@ -592,6 +735,8 @@ class UIFunction:
                     self.main_window.cfg.settings["user_host"],
                     use_gpu,
                     use_local_biapy_image=local_biapy_container_found,
+                    container_engine=container_engine,
+                    singularity_image_path=singularity_sif_path,
                 )
             )
 
