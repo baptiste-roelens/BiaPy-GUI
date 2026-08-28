@@ -102,23 +102,6 @@ class UIFunction:
             self.main_window.logger.info("The following error is expected as Docker has not been found in the system:")
             self.main_window.logger.warning(traceback.format_exc())
             self.main_window.logger.info("Below this point the we expect no more errors!")
-        if self.main_window.cfg.settings["docker_found"]:
-            self.main_window.ui.docker_status_label.setText("<br>Docker installation found")
-            self.main_window.cfg.settings["biapy_container_ready"] = True
-            self.main_window.ui.docker_head_label.setText("Docker dependency")
-
-            self.main_window.ui.docker_frame.setStyleSheet(
-                "#docker_frame { border: 3px solid green; border-radius: 25px;}\n#docker_frame:disabled {border: 3px solid rgb(169,169,169);}"
-            )
-        else:
-            self.main_window.ui.docker_status_label.setText(
-                'Docker installation not found. Follow the \
-                    <a href="https://biapy.readthedocs.io/en/latest/get_started/installation.html#docker-installation/">documentation</a> to install it.'
-            )
-            self.main_window.ui.docker_head_label.setText("Docker dependency error")
-            self.main_window.ui.docker_frame.setStyleSheet(
-                "#docker_frame { border: 3px solid red; border-radius: 25px;}\n#docker_frame:disabled {border: 3px solid rgb(169,169,169);}"
-            )
 
         # Singularity/Apptainer check
         import shutil
@@ -136,6 +119,28 @@ class UIFunction:
             self.main_window.cfg.settings["singularity_found"] = False
             self.main_window.cfg.settings["singularity_path"] = ""
             self.main_window.logger.info("Neither Singularity nor Apptainer was found in the system PATH.")
+
+        docker_found = self.main_window.cfg.settings["docker_found"]
+        singularity_found = self.main_window.cfg.settings["singularity_found"]
+
+        if docker_found:
+            self.main_window.cfg.settings["biapy_container_ready"] = True
+
+        docker_str = 'Docker: <span style="color:#04aa6d; font-weight:bold;">Available</span>' if docker_found else 'Docker: <span style="color:#ff3300; font-weight:bold;">Unavailable</span>'
+        sing_str = 'Singularity/Apptainer: <span style="color:#04aa6d; font-weight:bold;">Available</span>' if singularity_found else 'Singularity/Apptainer: <span style="color:#ff3300; font-weight:bold;">Unavailable</span>'
+        
+        self.main_window.ui.docker_status_label.setText(f"<br>{docker_str}<br>{sing_str}")
+
+        if docker_found or singularity_found:
+            self.main_window.ui.docker_head_label.setText("Container dependencies")
+            self.main_window.ui.docker_frame.setStyleSheet(
+                "#docker_frame { border: 3px solid green; border-radius: 25px;}\n#docker_frame:disabled {border: 3px solid rgb(169,169,169);}"
+            )
+        else:
+            self.main_window.ui.docker_head_label.setText("Container dependency error")
+            self.main_window.ui.docker_frame.setStyleSheet(
+                "#docker_frame { border: 3px solid red; border-radius: 25px;}\n#docker_frame:disabled {border: 3px solid rgb(169,169,169);}"
+            )
 
         # GPU check
         self.main_window.cfg.settings["GPUs"] = []
