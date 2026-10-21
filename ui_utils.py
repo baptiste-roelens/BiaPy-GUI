@@ -1276,6 +1276,9 @@ def export_wizard_summary(main_window: main.MainWindow):
 
         # Remove control values
         keys_to_remove = [x for x in biapy_cfg.keys() if "CHECKED " in x]
+        # The normalization layer only applies to models built from scratch (Q14 is hidden otherwise)
+        if not main_window.cfg.settings["wizard_question_visible"][13]:
+            keys_to_remove.append("MODEL.NORMALIZATION")
         for k in keys_to_remove:
             del biapy_cfg[k]
 

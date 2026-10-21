@@ -904,7 +904,59 @@ class Settings:
             </ul>\
             "
         ]
-        
+
+        #######
+        # Q14 #
+        #######
+        # Only asked when a new BiaPy model is built from scratch
+        self.settings["wizard_question_condition"]["Q14"] = {
+            "and_cond": [
+                [
+                    "MODEL.SOURCE",
+                    "biapy"
+                ],
+                [
+                    "MODEL.LOAD_CHECKPOINT",
+                    False
+                ]
+            ],
+            "or_cond": [],
+        }
+        self.settings["wizard_questions"] += [
+            "Which normalization layer should the network use?",
+        ]
+        self.settings["wizard_possible_answers"] += [
+            [
+                "Instance normalization",
+                "Batch normalization",
+            ]
+        ]
+        self.settings["wizard_variable_to_map"]["Q14"] = {}
+        self.settings["wizard_variable_to_map"]["Q14"]["MODEL.NORMALIZATION"] = ["in", "bn"]
+        self.settings["wizard_answers"]["MODEL.NORMALIZATION"] = -1
+        self.settings["wizard_sections"][-1][1] += ["Normalization layer"]
+        self.settings["wizard_from_question_index_to_toc"].append(
+            [1, len(self.settings["wizard_from_toc_to_question_index"][-1])]
+        )
+        self.settings["wizard_from_toc_to_question_index"][-1].append(q_count)
+        self.settings["wizard_question_visible"].append(False)
+        q_count += 1
+        # Q14 additional information
+        self.settings["wizard_question_additional_info"] += [
+            "<p>\
+            This question selects the type of normalization layer used inside the network when it is built from scratch.\
+            </p>\
+            <ul>\
+            <li>\
+            <strong>Instance normalization</strong> normalizes each sample independently, so it does not depend on the batch size. It is the default in recent BiaPy versions and a good choice when the batch size is small, which is common with large 3D patches.\
+            </li>\
+            <li>\
+            <strong>Batch normalization</strong> normalizes using statistics computed over the whole batch. It was the default in older BiaPy versions and works best with larger batch sizes.\
+            </li>\
+            </ul>\
+            "
+        ]
+
         self.settings["wizard_number_of_questions"] = len(self.settings["wizard_questions"])
         self.settings["wizard_question_answered_index"] = [-1]*len(self.settings["wizard_questions"])
         self.settings["wizard_question_visible_default"] = self.settings["wizard_question_visible"].copy()
