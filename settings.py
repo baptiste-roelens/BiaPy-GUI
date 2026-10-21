@@ -31,9 +31,9 @@ class Settings:
         self.settings["CUDA_selected"] = "" # to be filled by checking the GPU 
 
         # BiaPy
-        self.settings["biapy_code_version"] = Version("v3.6.8")
+        self.settings["biapy_code_version"] = Version("v3.7.1")
         self.settings["biapy_code_github"] = "https://github.com/BiaPyX/BiaPy"
-        self.settings["biapy_gui_version"] = Version("v1.2.3")
+        self.settings["biapy_gui_version"] = Version("v1.2.4")
         self.settings["biapy_gui_github"] = "https://github.com/BiaPyX/BiaPy-GUI"
         self.settings["biapy_container_basename"] = "biapyx/biapy"
         self.settings["biapy_container_name"] = (
@@ -162,7 +162,7 @@ class Settings:
                 "Identify circular objects (e.g. nuclei) in the image using points",
                 "Upsample images into higher resolution",
                 "Assign a label to each image",
-                "Restore a degraded image",
+                "Clean noisy images",
                 "Generate new images based on an input one",
             ]
         ]
@@ -267,7 +267,7 @@ class Settings:
             <a href='https://biapy.readthedocs.io/en/latest/workflows/classification.html'>its documentation</a>.\
             </p>\
             <p>\
-            <strong>&#8226;&quot;I want to restore a degraded image&quot; and &quot;I want to generate new images based on an input one&quot;</strong>&nbsp;both questions refers to the workflow called &quot;Image to image&quot;. The goal of this workflow aims at translating/mapping input images into target images. This workflow is as the super-resolution one but with no upsampling, e.g. with the scaling factor to x1.\
+            <strong>&#8226;&quot;Generate new images based on an input one&quot;</strong>&nbsp;refers to the workflow called &quot;Image to image&quot;. The goal of this workflow aims at translating/mapping input images into target images. This workflow is as the super-resolution one but with no upsampling, e.g. with the scaling factor to x1.\
             </p>\
             <p>\
             In the figure below an example of paired microscopy images (brightfield) is depicted. The images were obtained from <a href='https://lightmycells.grand-challenge.org/'>Light My Cells dataset</a>. \
